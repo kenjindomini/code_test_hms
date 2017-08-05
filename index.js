@@ -13,12 +13,12 @@ const routes = [
   {
     method: 'GET',
     path: '/participant/{participant_id?}',
-    handler: participantController
+    handler: participantController.getParticipant
   },
   {
     method: 'POST',
     path: '/participant',
-    handler: participantController
+    handler: participantController.postParticipant
   }
 ];
 
