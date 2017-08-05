@@ -4,7 +4,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const _ = require('lodash');
 
-const dbPath = process.env.HMSDBPATH || '../../db.json';
+const dbPath = process.env.HMSDBPATH || './db.json';
 
 let _db = {
   participant: {},
@@ -23,6 +23,7 @@ const _writeToDisk = function () {
       if (err) {
         reject(err);
       } else {
+        console.log('db file created/updated.');
         resolve();
       }
     });
@@ -38,6 +39,7 @@ const _audit = function (action, user, table, id) {
     let audit_id = _generateId();
     let description = `${action.toUpperCase()} ${table}.${id}`;
     _db.audit[audit_id] = {
+      audit_id,
       user,
       table,
       id,
@@ -47,7 +49,7 @@ const _audit = function (action, user, table, id) {
   return _writeToDisk();
 };
 
-const load = function () {
+const init = function () {
   return new Promise((resolve, reject) => {
     fs.readFile(dbPath, (err, data) => {
       if (err) {
@@ -74,6 +76,8 @@ const query = function (table, requester, where) {
 
 const add = function (table, entity, author) {
   let id = _generateId();
+  let id_attr = `${table}_id`;
+  entity[id_attr] = id;
   _db[table][id] = entity;
   return _audit('create', author, table, id);
 };
@@ -81,6 +85,8 @@ const add = function (table, entity, author) {
 const update = function (table, id, entity, author, overwrite = false) {
   let action;
   if (overwrite) {
+    let id_attr = `${table}_id`;
+    entity[id_attr] = id;
     _db[table][id] = entity;
     action = 'overwrite';
   } else {
@@ -100,7 +106,7 @@ const remove = function (table, id, author) {
 };
 
 module.exports = {
-  load: load,
+  init: init,
   query: query,
   add: add,
   update: update,

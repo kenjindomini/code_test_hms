@@ -3,23 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <title>HMS TEST -- Keith Olenchak</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script>
+        /***
+        * This wraps the builtin http request functionality in to a single function call.
+        * @param {string} verb -- The HTTP verb to use for this request
+        * @param {string} url -- The full url to make the HTTP request to
+        * @param {JSON} data -- The request body data
+        * @param {function} callback -- (optional) callback function (response, error), returns a promise if omitted
+        * @returns {Promise}
+        * @async
+        * @private
+        */
+        function _httpRequest (verb, url, data, callback) {
+          console.log('in _httpRequest');
+          data = data || null;
+          if (typeof callback !== 'function') {
+            var p = new Promise();
+            callback = function (response, error) {
+              if (response) {
+                p.resolve(response);
+              } else {
+                p.reject(error);
+              }
+            };
+            return p;
+          }
+          var xmlHttp = new XMLHttpRequest();
+          xmlHttp.onreadystatechange = function () {
+            if (xmlHttp.readyState === 4) {
+              callback(xmlHttp);
+            }
+          };
+          xmlHttp.ontimeout = function () {
+            callback(null, 'request timedout!');
+          };
+          console.log('opening request');
+          xmlHttp.open(verb, url, true); // true for asynchronous
+          xmlHttp.setRequestHeader('Content-Type', 'application/json');
+          console.log('sending request');
+          xmlHttp.send(JSON.stringify(data));
+        }
+
+        // placeholder function
+        function getLoggedInUser() {
+          return 'anonymous';
+        }
+
+        function writeMessage(message, b_error, timeout) {
+          timeout = timeout || 5000;
+          var parentDiv = document.getElementById('content');
+          var messageElement = document.getElementById('message');
+          var newMessageElement = document.createElement('p');
+          newMessageElement.id = 'message';
+          newMessageElement.setAttribute('class', b_error ? 'message_error' : 'message_success');
+          var messageTextNode = document.createTextNode(message);
+          newMessageElement.appendChild(messageTextNode);
+          parentDiv.replaceChild(newMessageElement, messageElement);
+          setTimeout(function () {
+            var messageElement = document.getElementById('message');
+            messageElement.setAttribute('class', 'hidden');
+          }, timeout);
+        }
+
+        function getFormData() {
+          var name = document.getElementById('name').value || null;
+          var age = document.getElementById('age').value;
+          var hasChildren = document.getElementById('hasChildren').value;
+          var exposures = document.getElementById('exposures').value;
+          var mutations = document.getElementById('mutations').value;
+          var participant = {
+            name: name,
+            age: age,
+            hasChildren: hasChildren,
+            exposures: exposures,
+            mutations: mutations
+          };
+          return participant;
+        }
+
+        function postParticipant() {
+          var user = getLoggedInUser();
+          var participant = getFormData();
+          var url = '/participant';
+          var data = {
+            author: user,
+            participant: participant
+          };
+          _httpRequest('post', url, data, function (results, err) {
+            if (err) {
+              console.log(err);
+              writeMessage(err, true);
+            } else {
+              writeMessage('Participant Added!', false);
+            }
+          });
+        }
+    </script>
 </head>
 <body>
-    <div id="header">
-        //
+    <div class="topnav" id="myTopnav">
+        <a href="./add_participant.html">Add Participants</a>
+        <a href="./participant_list.html">Show Participants</a>
     </div>
-    <div id="form">
-        <form id="add_participant">
-            <p>Participant Name: <input id="name" type="text"/></p>
-            <p>Participant Age: <input id="age" type="number"/></p>
-            <p>Does Participant have children: <select id="hasChildren">
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-            </select></p>
-            <p>Known Environmental Exposures: <textarea id="exposures"></textarea></p>
-            <p>Known Genetic Mutations: <textarea id="mutations"></textarea></p>
-            <p><input type="submit" value="Add"/></p>
-        </form>
+    <div id="content">
+        <p>Participant Name: <input id="name" type="text" required/></p>
+        <p>Participant Age: <input id="age" type="number" required/></p>
+        <p>Does Participant have children: <select id="hasChildren">
+            <option value="true">Yes</option>
+            <option value="false" selected>No</option>
+        </select></p>
+        <p>Known Environmental Exposures: <textarea id="exposures"></textarea></p>
+        <p>Known Genetic Mutations: <textarea id="mutations"></textarea></p>
+        <p><input type="submit" value="Add" onclick="postParticipant()"/></p>
+        <p id="message" class="hidden">I'm hidden</p>
     </div>
 </body>
 </html>

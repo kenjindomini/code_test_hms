@@ -1,12 +1,41 @@
 'use strict';
 
+const util = require('util');
+const db = require('../helpers/db');
+const _ = require('lodash');
+
+const DB_TABLE_PARTICIPANT = 'participant';
+
 const getParticipant = function (request, reply) {
   let participant_id = request.params.participant_id || null;
-  reply();
+  let requester = request.query.requester;
+  db.query(DB_TABLE_PARTICIPANT, requester, (participant) => {
+    if (_.isNull(participant_id)) {
+      return true;
+    } else {
+      return participant.participant_id = participant_id;
+    }
+  }).then(() => {
+    reply();
+  }).catch((err) => {
+    console.log(`db.query(${DB_TABLE_PARTICIPANT}, ${requester}, _.filter predicate) Failed!`);
+    console.dir(err);
+    throw err;
+  });
 };
 
 const postParticipant = function (request, reply) {
-  //
+  console.log('in postParticipant');
+  let author = request.payload.author;
+  let participant_entity = request.payload.participant;
+  console.log(util.inspect(request.payload, false, null));
+  db.add(DB_TABLE_PARTICIPANT, participant_entity, author).then(() => {
+    reply();
+  }).catch((err) => {
+    console.log(`db.add(${DB_TABLE_PARTICIPANT}, ${util.inspect(participant_entity, false, null)}, ${author}) Failed!`);
+    console.dir(err);
+    throw err;
+  });
 };
 
 module.exports = {
