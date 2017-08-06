@@ -7,4 +7,4 @@
 * CD in to repo
 * ```npm install```
 * ```npm run start```
-* Browse to [localhost:3001](localhost:3001)
+* Browse to [localhost:3001](http://localhost:3001)
