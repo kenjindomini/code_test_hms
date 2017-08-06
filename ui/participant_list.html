@@ -32,7 +32,7 @@
           var xmlHttp = new XMLHttpRequest();
           xmlHttp.onreadystatechange = function () {
             if (xmlHttp.readyState === 4) {
-              callback(xmlHttp);
+              callback(JSON.parse(xmlHttp.response));
             }
           };
           xmlHttp.ontimeout = function () {
@@ -66,18 +66,115 @@
           }, timeout);
         }
 
-        function getParticipants () {
+        function createPageLinks (curPage, totalPages) {
+          var parent = document.getElementById('content');
+          var curPageLink = document.getElementById('pageLinks');
+          var newPageLinks = document.createElement('div');
+          newPageLinks.id = 'pageLinks';
+          if (totalPages === 0) {
+            curPageLink.setAttribute('class', 'hidden')
+          } else {
+            console.log('curpage: ' + curPage + '; totalPages: ' + totalPages);
+            if (curPage !== 1) {
+              var pageLink;
+              pageLink = document.createElement('a');
+              pageLink.href = '#';
+              pageLink.setAttribute('onclick', 'getParticipants(' + (curPage - 1) + ')');
+              pageLink.id = 'pageLink:prev';
+              var pageLinkTextNode = document.createTextNode('prev');
+              pageLink.appendChild(pageLinkTextNode);
+              newPageLinks.appendChild(pageLink);
+            }
+            for (var i = 1; i <= totalPages; i++) {
+              var spacer = document.createTextNode('\u00A0\u00A0');
+              newPageLinks.appendChild(spacer);
+              var pageLink;
+              if (i === curPage) {
+                pageLink = document.createElement('span');
+              } else {
+                pageLink = document.createElement('a');
+                pageLink.href = '#';
+                pageLink.setAttribute('onclick', 'getParticipants(' + i + ')');
+              }
+              pageLink.id = 'pageLink:' + i;
+              var pageLinkTextNode = document.createTextNode('\u00A0\u00A0' + i + '\u00A0\u00A0');
+              pageLink.appendChild(pageLinkTextNode);
+              newPageLinks.appendChild(pageLink);
+            }
+            if (curPage !== totalPages) {
+              var spacer = document.createTextNode('\u00A0\u00A0');
+              newPageLinks.appendChild(spacer);
+              var pageLink;
+              pageLink = document.createElement('a');
+              pageLink.href = '#';
+              pageLink.setAttribute('onclick', 'getParticipants(' + (curPage + 1) + ')');
+              pageLink.id = 'pageLink:next';
+              var pageLinkTextNode = document.createTextNode('next');
+              pageLink.appendChild(pageLinkTextNode);
+              newPageLinks.appendChild(pageLink);
+            }
+            parent.replaceChild(newPageLinks, curPageLink);
+          }
+        }
+
+        function displayParticipants (participants) {
+          // update table
+          var parent = document.getElementById('participants');
+          var currentTbody = document.getElementById('participants_body');
+          var newTbody = document.createElement('tbody');
+          newTbody.id = 'participants_body';
+          for (var i = 0; i < participants.length; i++) {
+            var tr = document.createElement('tr');
+            tr.id = 'participant:' + participants[i].participant_id;
+            var tdName = document.createElement('td');
+            tdName.id = 'participant:name:' + participants[i].participant_id;
+            var nameTextNode = document.createTextNode(participants[i].name);
+            tdName.appendChild(nameTextNode);
+            var tdAge = document.createElement('td');
+            tdAge.id = 'participant:age:' + participants[i].participant_id;
+            var ageTextNode = document.createTextNode(participants[i].age);
+            tdAge.appendChild(ageTextNode);
+            var tdHasChildren = document.createElement('td');
+            tdHasChildren.id = 'participant:haschildren:' + participants[i].participant_id;
+            var hasChildrenTextNode = document.createTextNode(participants[i].hasChildren === 'true' ? 'Yes' : 'No');
+            tdHasChildren.appendChild(hasChildrenTextNode);
+            var tdExposures = document.createElement('td');
+            tdExposures.id = 'participant:exposures:' + participants[i].participant_id;
+            var exposuresTextNode = document.createTextNode(participants[i].exposures);
+            tdExposures.appendChild(exposuresTextNode);
+            var tdMutations = document.createElement('td');
+            tdMutations.id = 'participant:mutations:' + participants[i].participant_id;
+            var mutationsTextNode = document.createTextNode(participants[i].mutations);
+            tdMutations.appendChild(mutationsTextNode);
+            tr.appendChild(tdName);
+            tr.appendChild(tdAge);
+            tr.appendChild(tdHasChildren);
+            tr.appendChild(tdExposures);
+            tr.appendChild(tdMutations);
+            newTbody.appendChild(tr);
+          }
+          parent.replaceChild(newTbody, currentTbody);
+        }
+
+        function getParticipants (page) {
+          page = page || 1;
+          var limit = 10;
           var user = getLoggedInUser();
-          var url = '/participant?requester=' + user;
+          var url = '/participant?requester=' + user + '&page=' + page + '&limit=' + limit;
           _httpRequest('get', url, null, function (results, err) {
             if (err) {
               console.log(err);
               writeMessage(err, true);
             } else {
+              let meta = results.splice(0, 1);
+              displayParticipants(results);
+              createPageLinks(page, Math.ceil(meta[0].total / limit));
               writeMessage('Participants Loaded!', false);
             }
           });
         }
+
+        getParticipants();
     </script>
 </head>
 <body>
@@ -87,6 +184,22 @@
     </div>
     <div id="content">
         <p id="message" class="hidden">I'm hidden</p>
+        <table id="participants">
+            <thead id="participants_head">
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Has Children?</th>
+                    <th>Known Environmental Exposures</th>
+                    <th>Known Genetic Mutations</th>
+                </tr>
+            </thead>
+            <tbody id="participants_body">
+
+            </tbody>
+        </table>
+        <div id="pageLinks">
+        </div>
     </div>
 </body>
 </html>

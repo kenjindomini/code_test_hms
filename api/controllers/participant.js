@@ -8,6 +8,8 @@ const DB_TABLE_PARTICIPANT = 'participant';
 
 const getParticipant = function (request, reply) {
   let participant_id = request.params.participant_id || null;
+  let limit = request.query.limit || 10;
+  let page = request.query.page || 1;
   let requester = request.query.requester;
   db.query(DB_TABLE_PARTICIPANT, requester, (participant) => {
     if (_.isNull(participant_id)) {
@@ -15,8 +17,16 @@ const getParticipant = function (request, reply) {
     } else {
       return participant.participant_id = participant_id;
     }
-  }).then(() => {
-    reply();
+  }).then((results) => {
+    let pageIndex = page - 1;
+    let totalParticipants = results.length;
+    let meta = {
+      total: totalParticipants
+    };
+    results = _.sortBy(results, ['name']);
+    results = _.chunk(results, limit)[pageIndex];
+    results.splice(0, 0, meta);
+    reply(results);
   }).catch((err) => {
     console.log(`db.query(${DB_TABLE_PARTICIPANT}, ${requester}, _.filter predicate) Failed!`);
     console.dir(err);

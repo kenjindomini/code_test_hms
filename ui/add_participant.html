@@ -32,7 +32,11 @@
           var xmlHttp = new XMLHttpRequest();
           xmlHttp.onreadystatechange = function () {
             if (xmlHttp.readyState === 4) {
-              callback(xmlHttp);
+              var response = null;
+              try {
+                response = JSON.parse(xmlHttp.response);
+              } catch (err) {}
+              callback(response);
             }
           };
           xmlHttp.ontimeout = function () {

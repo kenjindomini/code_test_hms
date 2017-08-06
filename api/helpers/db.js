@@ -71,7 +71,9 @@ const init = function () {
 
 const query = function (table, requester, where) {
   let results = _.filter(_db[table], where);
-  return _audit('query', requester, table, null);
+  return _audit('query', requester, table, null).then(() => {
+    return results;
+  });
 };
 
 const add = function (table, entity, author) {
