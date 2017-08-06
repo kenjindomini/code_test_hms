@@ -30,6 +30,15 @@ const routes = [
     handler: participantController.postParticipant
   },
   {
+    method: 'PATCH',
+    path: '/participant/{participant_id}',
+    config: {
+      description: 'Add participant',
+      tags: ['api', 'participant']
+    },
+    handler: participantController.postParticipant
+  },
+  {
     method: 'GET',
     path: '/{file?}',
     config: {

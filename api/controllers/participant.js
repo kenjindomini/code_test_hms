@@ -48,7 +48,23 @@ const postParticipant = function (request, reply) {
   });
 };
 
+const patchParticipant = function (request, reply) {
+  console.log('in patchParticipant');
+  let author = request.payload.author;
+  let participant_id = request.params.participant_id;
+  let participant_entity = request.payload.participant;
+  console.log(util.inspect(request.payload, false, null));
+  db.update(DB_TABLE_PARTICIPANT, participant_id, participant_entity, author).then(() => {
+    reply();
+  }).catch((err) => {
+    console.log(`db.add(${DB_TABLE_PARTICIPANT}, ${util.inspect(participant_entity, false, null)}, ${author}) Failed!`);
+    console.dir(err);
+    throw err;
+  });
+};
+
 module.exports = {
   getParticipant: getParticipant,
-  postParticipant: postParticipant
+  postParticipant: postParticipant,
+  patchParticipant: patchParticipant
 };
