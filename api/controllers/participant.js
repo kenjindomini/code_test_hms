@@ -57,7 +57,7 @@ const patchParticipant = function (request, reply) {
   db.update(DB_TABLE_PARTICIPANT, participant_id, participant_entity, author).then(() => {
     reply();
   }).catch((err) => {
-    console.log(`db.add(${DB_TABLE_PARTICIPANT}, ${util.inspect(participant_entity, false, null)}, ${author}) Failed!`);
+    console.log(`db.update(${DB_TABLE_PARTICIPANT}, ${participant_id}, ${util.inspect(participant_entity, false, null)}, ${author}) Failed!`);
     console.dir(err);
     throw err;
   });

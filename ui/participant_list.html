@@ -32,13 +32,21 @@
           var xmlHttp = new XMLHttpRequest();
           xmlHttp.onreadystatechange = function () {
             if (xmlHttp.readyState === 4) {
-              callback(JSON.parse(xmlHttp.response));
+              console.log(xmlHttp);
+              var response = null;
+              try {
+                response = JSON.parse(xmlHttp.response);
+              } catch (err) {
+                console.log(err);
+              }
+              callback(response);
             }
           };
           xmlHttp.ontimeout = function () {
             callback(null, 'request timedout!');
           };
           console.log('opening request');
+          console.log(url);
           xmlHttp.open(verb, url, true); // true for asynchronous
           xmlHttp.setRequestHeader('Content-Type', 'application/json');
           console.log('sending request');
@@ -146,11 +154,44 @@
             tdMutations.id = 'participant:mutations:' + participants[i].participant_id;
             var mutationsTextNode = document.createTextNode(participants[i].mutations);
             tdMutations.appendChild(mutationsTextNode);
+            var tdReviewStatus = document.createElement('td');
+            tdReviewStatus.id = 'participant:reviewstatus:' + participants[i].participant_id;
+            var reviewStatusSelect = document.createElement('select');
+            reviewStatusSelect.id = 'participant:reviewstatus:select:' + participants[i].participant_id;
+            var rsOptionNotReviewed = document.createElement('option');
+            rsOptionNotReviewed.value = 'Not Reviewed';
+            var rsOptionNotReviewedText = document.createTextNode('Not Reviewed');
+            rsOptionNotReviewed.appendChild(rsOptionNotReviewedText);
+            var rsOptionReviewAccepted = document.createElement('option');
+            rsOptionReviewAccepted.value = 'Reviewed - Accepted';
+            var rsOptionReviewAcceptedText = document.createTextNode('Reviewed - Accepted');
+            rsOptionReviewAccepted.appendChild(rsOptionReviewAcceptedText);
+            var rsOptionReviewRejected = document.createElement('option');
+            rsOptionReviewRejected.value = 'Reviewed - Rejected';
+            var rsOptionReviewRejectedText = document.createTextNode('Reviewed - Rejected');
+            rsOptionReviewRejected.appendChild(rsOptionReviewRejectedText);
+            if (participants[i].review_status === 'Reviewed - Accepted') {
+              rsOptionReviewAccepted.selected = true;
+              tr.setAttribute('class', 'accepted');
+            } else if (participants[i].review_status === 'Reviewed - Rejected') {
+              rsOptionReviewRejected.selected = true;
+              tr.setAttribute('class', 'rejected');
+            } else {
+              rsOptionNotReviewed.selected = true;
+              tr.setAttribute('class', 'notReviewed');
+            }
+            reviewStatusSelect.appendChild(rsOptionNotReviewed);
+            reviewStatusSelect.appendChild(rsOptionReviewAccepted);
+            reviewStatusSelect.appendChild(rsOptionReviewRejected);
+            reviewStatusSelect.setAttribute('onchange', 'updateParticipantReviewStatus(\'' +
+              participants[i].participant_id + '\')');
+            tdReviewStatus.appendChild(reviewStatusSelect);
             tr.appendChild(tdName);
             tr.appendChild(tdAge);
             tr.appendChild(tdHasChildren);
             tr.appendChild(tdExposures);
             tr.appendChild(tdMutations);
+            tr.appendChild(tdReviewStatus);
             newTbody.appendChild(tr);
           }
           parent.replaceChild(newTbody, currentTbody);
@@ -174,25 +215,37 @@
           });
         }
 
-        function updateParticipantReviewStatus (participant_id, select_id) {
+        function updateParticipantTrClass (participant_id, review_status) {
+          console.log(review_status);
+          var tr = document.getElementById('participant:' + participant_id);
+          if (review_status === 'Reviewed - Accepted') {
+            tr.setAttribute('class', 'accepted');
+          } else if (review_status === 'Reviewed - Rejected') {
+            tr.setAttribute('class', 'rejected');
+          } else {
+            tr.setAttribute('class', 'notReviewed');
+          }
+        }
+
+        function updateParticipantReviewStatus (participant_id) {
           var user = getLoggedInUser();
+          var select_id = 'participant:reviewstatus:select:' + participant_id;
           var url = '/participant/' + participant_id;
           var selectElem = document.getElementById(select_id);
+          var review_status = selectElem.value;
+          updateParticipantTrClass(participant_id, review_status);
           var data = {
             author: user,
             participant: {
-              reviewStatus: reviewStatus
+              review_status: review_status
             }
           };
-          _httpRequest('patch', url, data, function (results, err) {
+          _httpRequest('post', url, data, function (results, err) {
             if (err) {
               console.log(err);
               writeMessage(err, true);
             } else {
-              let meta = results.splice(0, 1);
-              displayParticipants(results);
-              createPageLinks(page, Math.ceil(meta[0].total / limit));
-              writeMessage('Participants Loaded!', false);
+              writeMessage('Participant Updated!', false);
             }
           });
         }
@@ -215,6 +268,7 @@
                     <th>Has Children?</th>
                     <th>Known Environmental Exposures</th>
                     <th>Known Genetic Mutations</th>
+                    <th>Review Status</th>
                 </tr>
             </thead>
             <tbody id="participants_body">

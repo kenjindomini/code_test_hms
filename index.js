@@ -7,7 +7,10 @@ const db = require('./api/helpers/db');
 const server = new hapi.Server();
 server.connection({
   port: 3001,
-  host: 'localhost'
+  host: 'localhost',
+  routes: {
+    cors: true
+  }
 });
 
 const routes = [
@@ -30,13 +33,13 @@ const routes = [
     handler: participantController.postParticipant
   },
   {
-    method: 'PATCH',
+    method: 'POST',
     path: '/participant/{participant_id}',
     config: {
-      description: 'Add participant',
+      description: 'Update participant',
       tags: ['api', 'participant']
     },
-    handler: participantController.postParticipant
+    handler: participantController.patchParticipant
   },
   {
     method: 'GET',
