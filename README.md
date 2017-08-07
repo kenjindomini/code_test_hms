@@ -3,8 +3,8 @@
 * Install NPM 5+ if it was not included in your Node install
 
 ## Usage
-* Clone repo
-* CD in to repo
+* Clone repo or download+unpack zip
+* CD in to directory
 * ```npm install```
 * ```npm run start```
 * Browse to [localhost:3001](http://localhost:3001)
